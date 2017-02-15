@@ -7,7 +7,7 @@ options = OpenStruct.new
 options.limit = 10
 
 OptionParser.new do |opts|
-  opts.banner = "Usage: mailgun [options]"
+  opts.banner = "Usage: mailqun [options]"
 
   opts.on("-f [FROM]", "--from [FROM]", String) do |f|
     options.from = f
