@@ -2,35 +2,60 @@
 require 'net/http'
 require 'optparse'
 require 'ostruct'
+require 'json'
 
 options = OpenStruct.new
 options.limit = 10
 
+query_type = 'events'
+
 OptionParser.new do |opts|
   opts.banner = "Usage: mailqun [options]"
 
-  opts.on("-f [FROM]", "--from [FROM]", String) do |f|
+  opts.separator ""
+  opts.separator "Common options:"
+
+  opts.on("-f [FROM]", "--from [FROM]", String,
+          "Address of the sender") do |f|
     options.from = f
   end
 
-  opts.on("-t [TO]", "--to [TO]", String) do |t|
+  opts.on("-t [TO]", "--to [TO]", String,
+          "Address of the receiver") do |t|
     options.to = t
   end
 
-  opts.on("-s [SUBJECT]", "--subject [SUBJECT]", String) do |s|
+  opts.on("-s [SUBJECT]", "--subject [SUBJECT]", String,
+          "Subject of mail") do |s|
     options.subject = s
   end
 
-  opts.on("-l [LIMIT]", "--limit [LIMIT]", Integer) do |l|
+  opts.on("-l [LIMIT]", "--limit [LIMIT]", Integer,
+          "Limit on number of results") do |l|
     options.limit = l
   end
 
-  opts.on("--tags [TAG]", String) do |t|
+  opts.on("--tags [TAG]", String,
+          "Value in X-Mailgun-Tag header") do |t|
     options.tags = t
   end
 
-  opts.on("-e [EVENT]", "--event [EVENT]", String) do |e|
+  opts.on("-e [EVENT]", "--event [EVENT]", String,
+          "Event being queried") do |e|
     options.event = e
+  end
+
+  opts.separator ""
+  opts.separator "Bounce options:"
+
+  opts.on("--bounces",
+          "Add this option to query bounces instead of events") do |e|
+    query_type = 'bounces'
+  end
+
+  opts.on("-a [ADDRESS]", "--address [ADDRESS]", String,
+          "Bounced address, used with --bounces") do |a|
+    options.address = a
   end
 end.parse!
 
@@ -39,7 +64,7 @@ query = URI.encode_www_form(options.to_h)
 domain = ENV['MAILGUN_DOMAIN']
 secret = ENV['MAILGUN_SECRET']
 
-uri = URI("https://api.mailgun.net/v3/#{domain}/events?#{query}")
+uri = URI("https://api.mailgun.net/v3/#{domain}/#{query_type}?#{query}")
 
 response = nil
 
@@ -49,6 +74,6 @@ Net::HTTP.start(uri.host, uri.port, :use_ssl => uri.scheme == 'https') do |http|
   response = http.request request
 end
   
-puts response.body
+puts JSON.pretty_generate(JSON.parse(response.body))
 
 p options.to_h
