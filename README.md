@@ -33,4 +33,4 @@ $> mailqun -f care@domain.com -e accepted --tags cool --limit 10
 ```
 
 ## Todo
- - Query bounces as well
+ - ~Query bounces as well~
