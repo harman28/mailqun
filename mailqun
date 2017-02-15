@@ -1,0 +1,54 @@
+#!/usr/bin/env ruby
+require 'net/http'
+require 'optparse'
+require 'ostruct'
+
+options = OpenStruct.new
+options.limit = 10
+
+OptionParser.new do |opts|
+  opts.banner = "Usage: mailgun [options]"
+
+  opts.on("-f [FROM]", "--from [FROM]", String) do |f|
+    options.from = f
+  end
+
+  opts.on("-t [TO]", "--to [TO]", String) do |t|
+    options.to = t
+  end
+
+  opts.on("-s [SUBJECT]", "--subject [SUBJECT]", String) do |s|
+    options.subject = s
+  end
+
+  opts.on("-l [LIMIT]", "--limit [LIMIT]", Integer) do |l|
+    options.limit = l
+  end
+
+  opts.on("--tags [TAG]", String) do |t|
+    options.tags = t
+  end
+
+  opts.on("-e [EVENT]", "--event [EVENT]", String) do |e|
+    options.event = e
+  end
+end.parse!
+
+query = URI.encode_www_form(options.to_h)
+
+domain = ENV['MAILGUN_DOMAIN']
+secret = ENV['MAILGUN_SECRET']
+
+uri = URI("https://api.mailgun.net/v3/#{domain}/events?#{query}")
+
+response = nil
+
+Net::HTTP.start(uri.host, uri.port, :use_ssl => uri.scheme == 'https') do |http|
+  request = Net::HTTP::Get.new uri.request_uri
+  request.basic_auth 'api', secret
+  response = http.request request
+end
+  
+puts response.body
+
+p options.to_h
