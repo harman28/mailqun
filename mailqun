@@ -4,10 +4,67 @@ require 'optparse'
 require 'ostruct'
 require 'json'
 
-options = OpenStruct.new
-options.limit = 10
+def load_env
+  @domain = ENV['MAILGUN_DOMAIN']
+  @secret = ENV['MAILGUN_SECRET']
+end
 
-query_type = 'events'
+def load_uri
+  if @query_type == 'view'
+    uri = URI(@url)
+  else
+    query = URI.encode_www_form(@options.to_h)
+    uri = URI("https://api.mailgun.net/v3/#{@domain}/#{@query_type}?#{query}")
+  end
+  return uri
+end
+
+def get uri
+  response = nil
+  Net::HTTP.start(uri.host, uri.port, :use_ssl => uri.scheme == 'https') do |http|
+    request = Net::HTTP::Get.new uri.request_uri
+    request.basic_auth 'api', @secret
+    response = http.request request
+  end
+  return response
+end
+
+def get_json_response
+  response = get load_uri
+  JSON.parse(response.body)
+end
+
+def get_filename filename
+  filename.gsub!(/^.*(\\|\/)/, '')
+  filename.gsub!(/[^0-9A-Za-z.\-]/, '_')
+  "#{filename.strip}_#{Time.now.to_i}.html"
+end
+
+def handle_fetch json_response
+  puts JSON.pretty_generate(json_response)
+  p @options.to_h
+end
+
+def handle_view json_response
+  filename = get_filename json_response['subject']
+  open("#{filename}", 'w') do |f|
+    f.puts json_response['body-html']
+  end
+  system "open #{filename}"
+end
+
+def build_output json_response
+  if @query_type == 'view'
+    handle_view json_response
+  else
+    handle_fetch json_response
+  end
+end
+
+@options = OpenStruct.new
+@options.limit = 10
+
+@query_type = 'events'
 
 OptionParser.new do |opts|
   opts.banner = "Usage: mailqun [options]"
@@ -17,32 +74,32 @@ OptionParser.new do |opts|
 
   opts.on("-f [FROM]", "--from [FROM]", String,
           "Address of the sender") do |f|
-    options.from = f
+    @options.from = f
   end
 
   opts.on("-t [TO]", "--to [TO]", String,
           "Address of the receiver") do |t|
-    options.to = t
+    @options.to = t
   end
 
   opts.on("-s [SUBJECT]", "--subject [SUBJECT]", String,
           "Subject of mail") do |s|
-    options.subject = s
+    @options.subject = s
   end
 
   opts.on("-l [LIMIT]", "--limit [LIMIT]", Integer,
           "Limit on number of results") do |l|
-    options.limit = l
+    @options.limit = l
   end
 
   opts.on("--tags [TAG]", String,
           "Value in X-Mailgun-Tag header") do |t|
-    options.tags = t
+    @options.tags = t
   end
 
   opts.on("-e [EVENT]", "--event [EVENT]", String,
           "Event being queried") do |e|
-    options.event = e
+    @options.event = e
   end
 
   opts.separator ""
@@ -50,30 +107,28 @@ OptionParser.new do |opts|
 
   opts.on("--bounces",
           "Add this option to query bounces instead of events") do |e|
-    query_type = 'bounces'
+    @query_type = 'bounces'
   end
 
   opts.on("-a [ADDRESS]", "--address [ADDRESS]", String,
           "Bounced address, used with --bounces") do |a|
-    options.address = a
+    @options.address = a
+  end
+
+  opts.separator ""
+  opts.separator "View options:"
+
+  @hi = 'global'
+
+  opts.on("--view-body [URL]",
+          "Mailgun storage URL to fetch email body from") do |u|
+    @url = u
+    @query_type = 'view'
   end
 end.parse!
 
-query = URI.encode_www_form(options.to_h)
+load_env
 
-domain = ENV['MAILGUN_DOMAIN']
-secret = ENV['MAILGUN_SECRET']
+json_response = get_json_response
 
-uri = URI("https://api.mailgun.net/v3/#{domain}/#{query_type}?#{query}")
-
-response = nil
-
-Net::HTTP.start(uri.host, uri.port, :use_ssl => uri.scheme == 'https') do |http|
-  request = Net::HTTP::Get.new uri.request_uri
-  request.basic_auth 'api', secret
-  response = http.request request
-end
-  
-puts JSON.pretty_generate(JSON.parse(response.body))
-
-p options.to_h
+build_output json_response
