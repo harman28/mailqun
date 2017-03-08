@@ -11,6 +11,7 @@ end
 
 def load_uri
   if @query_type == 'view'
+    abort("Error: Where's the url, bro?") if @url.nil?
     uri = URI(@url)
   else
     query = URI.encode_www_form(@options.to_h)
