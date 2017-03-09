@@ -32,6 +32,9 @@ end
 
 def get_json_response
   response = get load_uri
+  unless response.kind_of? Net::HTTPSuccess
+    abort("Error: Response code was #{response.code}")
+  end
   JSON.parse(response.body)
 end
 
