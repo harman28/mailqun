@@ -13,12 +13,21 @@ And now:
 ``` sh
 $> mailqun -h
 Usage: mailqun [options]
-    -f, --from [FROM]
-    -t, --to [TO]
-    -s, --subject [SUBJECT]
-    -l, --limit [LIMIT]
-        --tags [TAG]
-    -e, --event [EVENT]
+
+Common options:
+    -f, --from [FROM]                Address of the sender
+    -t, --to [TO]                    Address of the receiver
+    -s, --subject [SUBJECT]          Subject of mail
+    -l, --limit [LIMIT]              Limit on number of results
+        --tags [TAG]                 Value in X-Mailgun-Tag header
+    -e, --event [EVENT]              Event being queried
+
+Bounce options:
+        --bounces                    Add this option to query bounces instead of events
+    -a, --address [ADDRESS]          Bounced address, used with --bounces
+
+View options:
+        --view-body [URL]            Mailgun storage URL to fetch email body from
 ```
 
 ### Examples:
@@ -32,5 +41,23 @@ Fetch ten acceptance events for mails sent by `care@domain.com` with the tag 'co
 $> mailqun -f care@domain.com -e accepted --tags cool --limit 10
 ```
 
-## Todo
- - ~Query bounces as well~
+Check if `lololol@wut.com` is on the bounce list
+```sh
+$> mailqun --bounces -l 2 -a lololol@wut.com
+```
+
+View body of email stored in some Mailgun url
+```sh
+$> mailqun --view-body "https://sw.api.mailgun.net/v3/domains/domain.com/messages/uglyhash"
+# => Saves mail in a .html file and opens using default program
+```
+
+## Contributing
+
+I am aware that this script is a mess. It was born as a result of frustration arising from seeing Mailgun's "Don't get angry" page a few times too many. I would welcome improvements, both features and design changes. Bug reports and pull requests are welcome on [the GitHub repo](https://github.com/harman28/mailqun).
+This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](contributor-covenant.org) code of conduct.
+
+
+## License
+
+The gem is available as open source under the terms of the [MIT License](http://opensource.org/licenses/MIT).
