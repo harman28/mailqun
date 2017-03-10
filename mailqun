@@ -12,18 +12,21 @@ end
 def load_uri
   if @query_type == 'view'
     abort("Error: Where's the url, bro?") if @url.nil?
-    uri = URI(@url)
+    url = @url
+  elsif @query_type == 'bounces'
+    url = "https://api.mailgun.net/v3/#{@domain}/#{@query_type}/#{@address}"
   else
     query = URI.encode_www_form(@options.to_h)
-    uri = URI("https://api.mailgun.net/v3/#{@domain}/#{@query_type}?#{query}")
+    url = "https://api.mailgun.net/v3/#{@domain}/#{@query_type}?#{query}"
   end
-  return uri
+  return URI(url)
 end
 
-def get uri
+def request uri
   response = nil
   Net::HTTP.start(uri.host, uri.port, :use_ssl => uri.scheme == 'https') do |http|
-    request = Net::HTTP::Get.new uri.request_uri
+    klass = Object.const_get("Net::HTTP::#{@verb.capitalize}")
+    request = klass.new uri.request_uri
     request.basic_auth 'api', @secret
     response = http.request request
   end
@@ -31,9 +34,9 @@ def get uri
 end
 
 def get_json_response
-  response = get load_uri
+  response = request load_uri
   unless response.kind_of? Net::HTTPSuccess
-    abort("Error: Response code was #{response.code}")
+    abort("Error: Response code was #{response.code}\n#{response.body}")
   end
   JSON.parse(response.body)
 end
@@ -67,8 +70,8 @@ end
 
 @options = OpenStruct.new
 @options.limit = 10
-
 @query_type = 'events'
+@verb = 'GET'
 
 OptionParser.new do |opts|
   opts.banner = "Usage: mailqun [options]"
@@ -116,7 +119,17 @@ OptionParser.new do |opts|
 
   opts.on("-a [ADDRESS]", "--address [ADDRESS]", String,
           "Bounced address, used with --bounces") do |a|
-    @options.address = a
+    if @query_type == 'bounces'
+      @address = a
+    end
+  end
+
+  opts.on("--delete [ADDRESS]", String,
+          "Delete address from bounces, used with --bounces") do |a|
+    if @query_type == 'bounces'
+      @address = a
+      @verb = 'DELETE'
+    end
   end
 
   opts.separator ""
