@@ -135,8 +135,6 @@ OptionParser.new do |opts|
   opts.separator ""
   opts.separator "View options:"
 
-  @hi = 'global'
-
   opts.on("--view-body [URL]",
           "Mailgun storage URL to fetch email body from") do |u|
     @url = u
