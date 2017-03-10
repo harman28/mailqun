@@ -13,7 +13,7 @@ def load_uri
   if @query_type == 'view'
     abort("Error: Where's the url, bro?") if @url.nil?
     url = @url
-  elsif @query_type == 'bounces'
+  elsif @query_type == 'bounces' and @address
     url = "https://api.mailgun.net/v3/#{@domain}/#{@query_type}/#{@address}"
   else
     query = URI.encode_www_form(@options.to_h)
