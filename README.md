@@ -55,9 +55,9 @@ $> mailqun --view-body "https://sw.api.mailgun.net/v3/domains/domain.com/message
 ## Contributing
 
 I am aware that this script is a mess. It was born as a result of frustration arising from seeing Mailgun's "Don't get angry" page a few times too many. I would welcome improvements, both features and design changes. Bug reports and pull requests are welcome on [the GitHub repo](https://github.com/harman28/mailqun).
-This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](contributor-covenant.org) code of conduct.
+This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [Contributor Covenant](http://contributor-covenant.org) code of conduct.
 
 
 ## License
 
-The gem is available as open source under the terms of the [MIT License](http://opensource.org/licenses/MIT).
+The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
