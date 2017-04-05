@@ -1,4 +1,4 @@
-# Mailqun
+e# Mailqun
 
 Mailgun's website is stupid, so this script lets you query events from commandline.
 
@@ -25,6 +25,7 @@ Common options:
 Bounce options:
         --bounces                    Add this option to query bounces instead of events
     -a, --address [ADDRESS]          Bounced address, used with --bounces
+        --delete [ADDRESS]           Delete address from bounces, used with --bounces
 
 View options:
         --view-body [URL]            Mailgun storage URL to fetch email body from
