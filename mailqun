@@ -3,6 +3,7 @@ require 'net/http'
 require 'optparse'
 require 'ostruct'
 require 'json'
+require 'colorize'
 
 def load_env
   @domain = ENV['MAILGUN_DOMAIN']
@@ -47,8 +48,50 @@ def get_filename filename
   "#{filename.strip}_#{Time.now.to_i}.html"
 end
 
+def pretty_print_event_item item
+  event = item['event'].upcase
+  pretty_line = "#{Time.at(item['timestamp'])}: [#{event}]"
+  pretty_line = "#{pretty_line}\t[#{item['tags'].join(',')}]";
+  pretty_line = "#{pretty_line} #{item['message']['headers']['to']}"
+
+  if event == 'FAILED'
+    pretty_line = "#{pretty_line}\t- #{item['delivery-status']['code']}"\
+                  " - #{item['delivery-status']['description']}"
+    puts "#{pretty_line}".red
+  elsif ['DELIVERED', 'OPENED'].include? event
+    puts "#{pretty_line}".green
+  else
+    puts "#{pretty_line}"
+  end
+end
+
+def pretty_print_bounce_item item
+  pretty_line = "#{item['created_at']}: #{item['address']}"
+  pretty_line = "#{pretty_line}\t- #{item['error'].red}";
+
+  puts "#{pretty_line}"
+end
+
+def pretty_print_item item
+  if @query_type == 'bounces'
+    pretty_print_bounce_item item
+  else
+    pretty_print_event_item item
+  end
+end
+
+def pretty_print json_response
+  json_response['items'].each do |item|
+    pretty_print_item item
+  end
+end
+
 def handle_fetch json_response
-  puts JSON.pretty_generate(json_response)
+  if @options.pretty and !json_response['items'].nil?
+    pretty_print json_response
+  else
+    puts JSON.pretty_generate(json_response)
+  end
   p @options.to_h
 end
 
@@ -107,6 +150,11 @@ OptionParser.new do |opts|
   opts.on("-e [EVENT]", "--event [EVENT]", String,
           "Event being queried") do |e|
     @options.event = e
+  end
+
+  opts.on("-p", "--pretty",
+          "Makes response a lot more readable") do |e|
+    @options.pretty = true
   end
 
   opts.separator ""
