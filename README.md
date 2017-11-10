@@ -1,9 +1,14 @@
-e# Mailqun
+# Mailqun
 
-Mailgun's website is stupid, so this script lets you query events from commandline.
+Mailgun's website is stupid, so this executable gem lets you query events from commandline.
 
 ### Usage
-Copy the `mailqun` file to some place that's in your `$PATH`. Set the following env variables:
+Install:
+```
+gem install mailqun
+```
+
+Set the following env variables:
 ``` sh
 MAILGUN_DOMAIN=domain.com
 MAILGUN_SECRET=key-lalala.domain.secret
