@@ -3,11 +3,27 @@ require 'net/http'
 require 'optparse'
 require 'ostruct'
 require 'json'
-require 'colorize'
+
+begin
+  require 'colorize'
+rescue LoadError
+  class String
+    def method_missing(name)
+      if ['green', 'red'].include? name.to_s
+        self
+      else
+        super
+      end
+    end
+  end
+end
 
 def load_env
   @domain = ENV['MAILGUN_DOMAIN']
   @secret = ENV['MAILGUN_SECRET']
+
+  abort("Error: Set MAILGUN_DOMAIN") if @domain.nil?
+  abort("Error: Set MAILGUN_SECRET") if @secret.nil?
 end
 
 def load_uri
