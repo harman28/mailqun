@@ -1,0 +1,23 @@
+Style/MethodDefParentheses:
+  EnforcedStyle: require_no_parentheses
+
+Metrics/LineLength:
+  Max: 80
+
+Metrics/BlockLength:
+  Max: 10000
+
+Metrics/MethodLength:
+  Max: 10000
+
+Style/Documentation:
+  Enabled: false
+
+Style/WordArray:
+  Enabled: false
+
+Style/AndOr:
+  Enabled: false
+
+Style/RegexpLiteral:
+  AllowInnerSlashes: true

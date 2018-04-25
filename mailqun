@@ -9,8 +9,8 @@ def load_env
   @domain = ENV['MAILGUN_DOMAIN']
   @secret = ENV['MAILGUN_SECRET']
 
-  abort("Error: Set MAILGUN_DOMAIN") if @domain.nil?
-  abort("Error: Set MAILGUN_SECRET") if @secret.nil?
+  abort('Error: Set MAILGUN_DOMAIN') if @domain.nil?
+  abort('Error: Set MAILGUN_SECRET') if @secret.nil?
 end
 
 def load_uri
@@ -23,29 +23,29 @@ def load_uri
     query = URI.encode_www_form(@options.to_h)
     url = "https://api.mailgun.net/v3/#{@domain}/#{@query_type}?#{query}"
   end
-  return URI(url)
+  URI(url)
 end
 
 def request uri
   response = nil
-  Net::HTTP.start(uri.host, uri.port, :use_ssl => uri.scheme == 'https') do |http|
+  Net::HTTP.start(uri.host, uri.port, use_ssl: uri.scheme == 'https') do |http|
     klass = Object.const_get("Net::HTTP::#{@verb.capitalize}")
     request = klass.new uri.request_uri
     request.basic_auth 'api', @secret
     response = http.request request
   end
-  return response
+  response
 end
 
-def get_json_response
+def build_json_response
   response = request load_uri
-  unless response.kind_of? Net::HTTPSuccess
+  unless response.is_a? Net::HTTPSuccess
     abort("Error: Response code was #{response.code}\n#{response.body}")
   end
   JSON.parse(response.body)
 end
 
-def get_filename filename
+def build_filename filename
   filename.gsub!(/^.*(\\|\/)/, '')
   filename.gsub!(/[^0-9A-Za-z.\-]/, '_')
   "#{filename.strip}_#{Time.now.to_i}.html"
@@ -53,29 +53,37 @@ end
 
 def pretty_print_event_item item
   event = item['event'].upcase
-  pretty_line = "#{Time.at(item['timestamp'])}: [#{event}]"
-  pretty_line = "#{pretty_line}\t[#{item['tags'].join(',')}]";
-  pretty_line = "#{pretty_line} #{item['recipient']}"
-
+  pretty_line = pretty_line_prefix item
   if event == 'FAILED'
-    error_description = item['delivery-status']['description']
-    error_description = item['delivery-status']['message'] if error_description.empty?
-    pretty_line = "#{pretty_line}\t- #{item['delivery-status']['code']}"\
-                  " - #{error_description}"
-
-    puts "#{pretty_line}".red
+    puts pretty_line_failed(pretty_line, item).to_s.red
   elsif ['DELIVERED', 'OPENED'].include? event
-    puts "#{pretty_line}".green
+    puts pretty_line.to_s.green
   else
-    puts "#{pretty_line}"
+    puts pretty_line.to_s
   end
+end
+
+def pretty_line_failed pretty_line, item
+  error_description = [
+    item['delivery-status']['description'],
+    item['delivery-status']['message']
+  ].find { |m| !m.empty? }[0..70].gsub(/\s\w+$/, '...')
+  "#{pretty_line}\t- #{item['delivery-status']['code']} - #{error_description}"
+end
+
+def pretty_line_prefix item
+  "#{Time.at(item['timestamp'])}: " \
+  "[#{item['event'].upcase}]" \
+  "\t" \
+  "[#{item['tags'].join(',')}] " \
+  "#{item['recipient']}"
 end
 
 def pretty_print_bounce_item item
   pretty_line = "#{item['created_at']}: #{item['address']}"
-  pretty_line = "#{pretty_line}\t- #{item['error'].red}";
+  pretty_line = "#{pretty_line}\t- #{item['error'].red}"
 
-  puts "#{pretty_line}"
+  puts pretty_line.to_s
 end
 
 def pretty_print_item item
@@ -102,8 +110,8 @@ def handle_fetch json_response
 end
 
 def handle_view json_response
-  filename = get_filename json_response['subject']
-  open("#{filename}", 'w') do |f|
+  filename = build_filename json_response['subject']
+  File.open(filename.to_s, 'w') do |f|
     f.puts json_response['body-html']
   end
   system "open #{filename}"
@@ -124,74 +132,72 @@ end
 @verb = 'GET'
 
 OptionParser.new do |opts|
-  opts.banner = "Usage: mailqun [options]"
+  opts.banner = 'Usage: mailqun [options]'
 
-  opts.separator ""
-  opts.separator "Common options:"
+  opts.separator ''
+  opts.separator 'Common options:'
 
-  opts.on("-f [FROM]", "--from [FROM]", String,
-          "Address of the sender") do |f|
+  opts.on('-f [FROM]', '--from [FROM]', String,
+          'Address of the sender') do |f|
     @options.from = f
   end
 
-  opts.on("-t [TO]", "--to [TO]", String,
-          "Address of the receiver") do |t|
+  opts.on('-t [TO]', '--to [TO]', String,
+          'Address of the receiver') do |t|
     @options.to = t
   end
 
-  opts.on("-s [SUBJECT]", "--subject [SUBJECT]", String,
-          "Subject of mail") do |s|
+  opts.on('-s [SUBJECT]', '--subject [SUBJECT]', String,
+          'Subject of mail') do |s|
     @options.subject = s
   end
 
-  opts.on("-l [LIMIT]", "--limit [LIMIT]", Integer,
-          "Limit on number of results") do |l|
+  opts.on('-l [LIMIT]', '--limit [LIMIT]', Integer,
+          'Limit on number of results') do |l|
     @options.limit = l
   end
 
-  opts.on("--tags [TAG]", String,
-          "Value in X-Mailgun-Tag header") do |t|
+  opts.on('--tags [TAG]', String,
+          'Value in X-Mailgun-Tag header') do |t|
     @options.tags = t
   end
 
-  opts.on("-e [EVENT]", "--event [EVENT]", String,
-          "Event being queried") do |e|
+  opts.on('-e [EVENT]', '--event [EVENT]', String,
+          'Event being queried') do |e|
     @options.event = e
   end
 
-  opts.on("--raw",
-          "Gives raw json response, instead of summary") do |e|
+  opts.on('--raw',
+          'Gives raw json response, instead of summary') do |_e|
     @options.pretty = false
   end
 
-  opts.separator ""
-  opts.separator "Bounce options:"
+  opts.separator ''
+  opts.separator 'Bounce options:'
 
-  opts.on("--bounces",
-          "Add this option to query bounces instead of events") do |e|
+  opts.on('--bounces',
+          'Add this option to query bounces instead of events') do |_e|
     @query_type = 'bounces'
   end
 
-  opts.on("-a [ADDRESS]", "--address [ADDRESS]", String,
-          "Bounced address, used with --bounces") do |a|
-    if @query_type == 'bounces'
-      @address = a
-    end
+  opts.on('-a [ADDRESS]', '--address [ADDRESS]', String,
+          'Bounced address, used with --bounces') do |a|
+    @address = a if @query_type == 'bounces'
   end
 
-  opts.on("--delete [ADDRESS]", String,
-          "Delete address from bounces, used with --bounces") do |a|
+  opts.on('--delete [ADDRESS]', String,
+          'Delete address from bounces, used with --bounces') do |a|
     if @query_type == 'bounces'
       @address = a
       @verb = 'DELETE'
     end
   end
 
-  opts.separator ""
-  opts.separator "View options:"
+  opts.separator ''
+  opts.separator 'View options:'
 
-  opts.on("--view-body [URL]",
-          "Mailgun storage URL to fetch email body from") do |u|
+  opts.on('--view-body [URL]',
+          'Mailgun storage URL to fetch email body from') do |u|
     @url = u
     @query_type = 'view'
   end
@@ -199,6 +205,6 @@ end.parse!
 
 load_env
 
-json_response = get_json_response
+json_response = build_json_response
 
 build_output json_response
