@@ -68,7 +68,7 @@ def pretty_print_event_item item
   event = item['event'].upcase
   pretty_line = "#{Time.at(item['timestamp'])}: [#{event}]"
   pretty_line = "#{pretty_line}\t[#{item['tags'].join(',')}]";
-  pretty_line = "#{pretty_line} #{item['message']['headers']['to']}"
+  pretty_line = "#{pretty_line} #{item['recipient']}"
 
   if event == 'FAILED'
     pretty_line = "#{pretty_line}\t- #{item['delivery-status']['code']}"\
