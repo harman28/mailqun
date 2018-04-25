@@ -1,6 +1,6 @@
 Gem::Specification.new do |spec|
   spec.name          = 'mailqun'
-  spec.version       = '0.1.3'
+  spec.version       = '0.2.0'
   spec.authors       = ['Harman Singh']
   spec.email         = ['harman28@gmail.com']
   spec.summary       = 'Command line query tool for Mailgun, '\
