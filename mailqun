@@ -143,8 +143,13 @@ OptionParser.new do |opts|
   end
 
   opts.on('-t [TO]', '--to [TO]', String,
-          'Address of the receiver') do |t|
+          'Address(es) the mail was sent to') do |t|
     @options.to = t
+  end
+
+  opts.on('-r [RECIPIENT]', '--recipient [RECEIVER]', String,
+          'Address of the recipient') do |t|
+    @options.recipient = t
   end
 
   opts.on('-s [SUBJECT]', '--subject [SUBJECT]', String,
