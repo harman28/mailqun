@@ -71,8 +71,11 @@ def pretty_print_event_item item
   pretty_line = "#{pretty_line} #{item['recipient']}"
 
   if event == 'FAILED'
+    error_description = item['delivery-status']['description']
+    error_description = item['delivery-status']['message'] if error_description.empty?
     pretty_line = "#{pretty_line}\t- #{item['delivery-status']['code']}"\
-                  " - #{item['delivery-status']['description']}"
+                  " - #{error_description}"
+
     puts "#{pretty_line}".red
   elsif ['DELIVERED', 'OPENED'].include? event
     puts "#{pretty_line}".green
